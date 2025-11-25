@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSC/Railway GK Quiz</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .quiz-container {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        .options-grid {
+            display: grid;
+            gap: 10px;
+        }
+        .option-btn {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: left;
+        }
+        .option-btn:hover:not([disabled]) {
+            background-color: #f9f9f9;
+            border-color: #bbb;
+        }
+        /* सही जवाब के लिए स्टाइल */
+        .correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724;
+        }
+        /* गलत जवाब के लिए स्टाइल (Grey जैसा आपने कहा) */
+        .wrong {
+            background-color: #e2e3e5 !important;
+            border-color: #6c757d !important;
+            color: #383d41;
+        }
+        #next-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: none; /* शुरू में छिपा रहेगा */
+        }
+        #loading {
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="question-box">
+        <p id="loading">प्रश्न लोड हो रहा है...</p>
+        <h2 id="question-text" style="display:none;"></h2>
+    </div>
+    
+    <div class="options-grid" id="options-box">
+        </div>
+
+    <button id="next-btn" onclick="fetchQuestion()">अगला प्रश्न (Next) >></button>
+</div>
+
+<script>
+    // यह API है जहाँ से प्रश्न आएंगे (फिलहाल यह General Knowledge के मिक्स प्रश्न लाएगा)
+    const API_URL = "https://opentdb.com/api.php?amount=1&type=multiple";
+
+    async function fetchQuestion() {
+        const questionText = document.getElementById('question-text');
+        const optionsBox = document.getElementById('options-box');
+        const nextBtn = document.getElementById('next-btn');
+        const loading = document.getElementById('loading');
+
+        // रिसेट करें
+        questionText.style.display = 'none';
+        optionsBox.innerHTML = '';
+        nextBtn.style.display = 'none';
+        loading.style.display = 'block';
+
+        try {
+            // ऑनलाइन प्रश्न लाना
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            
+            if(data.results.length > 0) {
+                const qData = data.results[0];
+                displayQuestion(qData);
+            } else {
+                questionText.innerText = "Error loading question.";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            questionText.innerText = "इंटरनेट चेक करें या दोबारा कोशिश करें।";
+            loading.style.display = 'none';
+            questionText.style.display = 'block';
+            nextBtn.style.display = 'block';
+        }
+    }
+
+    function displayQuestion(qData) {
+        const questionText = document.getElementById('question-text');
+        const optionsBox = document.getElementById('options-box');
+        const loading = document.getElementById('loading');
+
+        // प्रश्न दिखाना (HTML entities decode करने के साथ)
+        questionText.innerHTML = qData.question; 
+        
+        // ऑप्शन्स को मिक्स करना (Shuffle)
+        let options = [...qData.incorrect_answers, qData.correct_answer];
+        options.sort(() => Math.random() - 0.5);
+
+        loading.style.display = 'none';
+        questionText.style.display = 'block';
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.classList.add('option-btn');
+            btn.innerHTML = opt;
+            
+            // क्लिक करने पर क्या होगा
+            btn.onclick = () => checkAnswer(btn, opt, qData.correct_answer);
+            
+            optionsBox.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedBtn, selectedOption, correctOption) {
+        const buttons = document.querySelectorAll('.option-btn');
+        
+        // सभी बटन डिसेबल करें ताकि दोबारा क्लिक न हो
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (selectedOption === correctOption) {
+            // अगर सही चुना तो हरा करें
+            selectedBtn.classList.add('correct');
+        } else {
+            // अगर गलत चुना तो उसे Grey करें
+            selectedBtn.classList.add('wrong');
+            
+            // और सही वाले को ढूँढकर हरा करें
+            buttons.forEach(btn => {
+                if (btn.innerHTML === correctOption) {
+                    btn.classList.add('correct');
+                }
+            });
+        }
+
+        // Next बटन दिखाएं
+        document.getElementById('next-btn').style.display = 'inline-block';
+    }
+
+    // पेज लोड होते ही पहला प्रश्न लाएं
+    fetchQuestion();
+</script>
+
+</body>
+</html>
