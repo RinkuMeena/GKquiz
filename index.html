@@ -3,117 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Server Quiz</title>
+    <title>Sarkari Exam Live Quiz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --accent: #2980b9; --bg: #ecf0f1; --card: #fff; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
+        :root { --primary: #2c3e50; --accent: #2980b9; --bg: #f4f7f6; --card: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
 
         /* HEADER */
-        header { background: #fff; padding: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .stats { font-weight: bold; font-size: 0.9rem; }
-        .green { color: green; } .red { color: red; }
+        header { background: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .logo { font-weight: 800; font-size: 1.2rem; color: var(--primary); }
+        .stats { font-weight: bold; font-size: 0.9rem; display: flex; gap: 15px; }
+        .stat-box { background: #f8f9fa; padding: 5px 10px; border-radius: 20px; border: 1px solid #eee; }
+        .green { color: #27ae60; } .red { color: #c0392b; }
 
         /* QUIZ AREA */
-        #quiz-container { max-width: 700px; margin: 20px auto; padding: 10px; }
+        #quiz-container { max-width: 700px; margin: 20px auto; padding: 15px; }
         
-        .card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: var(--card); padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); animation: slideUp 0.4s ease; border-left: 5px solid transparent; }
+        .card:hover { transform: translateY(-2px); transition: 0.3s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .exam-tag { background: #e0f7fa; color: #006064; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        .q-text { font-size: 1.1rem; margin: 10px 0; font-weight: 600; color: #333; }
+        .exam-tag { background: #e3f2fd; color: #1565c0; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; display: inline-block; letter-spacing: 0.5px; }
+        .q-text { font-size: 1.15rem; margin: 15px 0; font-weight: 600; color: #34495e; line-height: 1.5; }
 
-        .opt-btn { width: 100%; padding: 12px; margin-bottom: 8px; border: 1px solid #ddd; background: #fff; text-align: left; cursor: pointer; border-radius: 5px; }
-        .opt-btn:hover { background: #f9f9f9; }
+        .opt-btn { width: 100%; padding: 14px; margin-bottom: 10px; border: 2px solid #f1f2f6; background: #fff; text-align: left; cursor: pointer; border-radius: 8px; font-size: 1rem; color: #555; transition: all 0.2s; }
+        .opt-btn:hover:not([disabled]) { background: #f8f9fa; border-color: #dcdde1; }
         
-        .correct { background: #d4edda !important; border-color: green !important; }
-        .wrong { background: #f8d7da !important; border-color: red !important; }
+        .correct { background: #d4edda !important; border-color: #27ae60 !important; color: #155724 !important; font-weight: 600; }
+        .wrong { background: #f8d7da !important; border-color: #c0392b !important; color: #721c24 !important; }
 
-        .exp-box { display: none; margin-top: 10px; background: #fff3cd; padding: 10px; font-size: 0.9rem; border-radius: 5px; }
+        .exp-box { display: none; margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 8px; font-size: 0.95rem; color: #856404; border-left: 4px solid #ffeeba; }
 
-        /* LOADING */
-        #loader { text-align: center; margin-top: 50px; font-size: 1.2rem; color: #666; }
+        /* LOADING & ERROR */
+        #loader { text-align: center; margin-top: 100px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* FLOATING BTN */
-        .fab { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .fab { position: fixed; bottom: 25px; right: 25px; background: var(--primary); color: white; width: 55px; height: 55px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(44, 62, 80, 0.4); font-size: 1rem; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .fab:active { transform: scale(0.95); }
+
     </style>
 </head>
 <body>
 
 <header>
-    <div>Server Mode: <span style="color:green">● Live</span></div>
+    <div class="logo">ExamHub <span style="font-size:0.8rem; color:green; font-weight:normal">● Live</span></div>
     <div class="stats">
-        Total: <span id="s-total">0</span> | 
-        <span class="green">✔ <span id="s-correct">0</span></span> | 
-        <span class="red">✘ <span id="s-wrong">0</span></span>
+        <div class="stat-box">Total: <span id="s-total">0</span></div>
+        <div class="stat-box green">✔ <span id="s-correct">0</span></div>
+        <div class="stat-box red">✘ <span id="s-wrong">0</span></div>
     </div>
 </header>
 
-<div id="loader">Connecting to Server...<br><small>Fetching Questions from Sheet</small></div>
+<div id="loader">
+    <div class="spinner"></div>
+    <div id="status-text">Connecting to Google Sheet...</div>
+</div>
+
 <div id="quiz-container"></div>
 
-<button class="fab" onclick="toggleLang()">A/अ</button>
+<button class="fab" onclick="toggleLang()" title="Switch Language">A/अ</button>
 
 <script>
     // ==========================================
-    // 👇 यहाँ अपनी GOOGLE SHEET का लिंक पेस्ट करें 👇
+    // ✅ YOUR FIXED LINK (CSV MODE)
     // ==========================================
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCPCEpMa6Nj55kQ87O2XRHE0pgL3C1dds7SVxqxk-5Iuh7wJIH00p0Q3LkrD8b9gX_GpM_sHlRenRY/pubhtml";
+    // मैंने आपके लिंक से 'pubhtml' हटाकर 'pub?output=csv' कर दिया है
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCPCEpMa6Nj55kQ87O2XRHE0pgL3C1dds7SVxqxk-5Iuh7wJIH00p0Q3LkrD8b9gX_GpM_sHlRenRY/pub?output=csv";
+    
     // ==========================================
 
     let allQuestions = [];
     let currentLang = 'en';
     let stats = { total: 0, correct: 0, wrong: 0 };
 
-    // 1. Google Sheet से डेटा लाना (The Magic)
     function fetchQuestions() {
-        // लिंक को CSV फॉर्मेट में बदलना
-        let csvUrl = SHEET_URL.replace('/edit#gid=', '/export?format=csv&gid=').replace('/edit?usp=sharing', '/export?format=csv');
-
-        Papa.parse(csvUrl, {
+        Papa.parse(SHEET_URL, {
             download: true,
             header: true,
+            skipEmptyLines: true,
             complete: function(results) {
-                // खाली पंक्तियाँ हटाना
-                allQuestions = results.data.filter(row => row.q_en && row.q_en.trim() !== "");
-                
-                // Shuffle (प्रश्नों को मिक्स करना)
-                allQuestions.sort(() => Math.random() - 0.5);
-                
-                document.getElementById('loader').style.display = 'none';
-                
-                if(allQuestions.length === 0) {
-                    alert("Sheet से कोई डेटा नहीं मिला! कृपया हेडर (Headers) चेक करें।");
-                } else {
+                // डेटा चेक करें
+                if (results.data && results.data.length > 0) {
+                    // सिर्फ वो प्रश्न लें जिनमें 'exam' और 'q_en' भरा हुआ हो
+                    allQuestions = results.data.filter(row => row.exam && row.q_en);
+                    
+                    if(allQuestions.length === 0) {
+                        showError("Sheet खाली है या Headers गलत हैं।");
+                        return;
+                    }
+
+                    // Shuffle Questions
+                    allQuestions.sort(() => Math.random() - 0.5);
+                    
+                    document.getElementById('loader').style.display = 'none';
                     renderQuestions();
+                } else {
+                    showError("No data found in Sheet.");
                 }
             },
             error: function(err) {
-                document.getElementById('loader').innerHTML = "Server Error! Link Check karein.";
+                showError("Connection Failed! Internet check karein.");
                 console.error(err);
             }
         });
     }
 
-    // 2. प्रश्न स्क्रीन पर दिखाना
     function renderQuestions() {
         const container = document.getElementById('quiz-container');
-        // ज्यादा लोड न हो इसलिए अभी पहले 50 दिखा रहे हैं (Infinite Scroll बाद में जोड़ सकते हैं)
-        const batch = allQuestions.slice(0, 50); 
+        // एक बार में 100 प्रश्न लोड करें (बाद में और लोड कर सकते हैं)
+        const batch = allQuestions.slice(0, 100); 
         
         batch.forEach((q, index) => {
             let card = document.createElement('div');
             card.className = 'card';
-            card.dataset.idx = index; // Language toggle के लिए
+            card.dataset.idx = index;
 
-            // सही उत्तर को A,B,C,D से 0,1,2,3 इंडेक्स में बदलना
+            // Correct Answer Calculation (A/B/C/D -> 0/1/2/3)
             let correctIndex = 0;
-            const ansChar = q.correct ? q.correct.toLowerCase().trim() : 'a';
+            const ansChar = q.correct ? q.correct.toString().trim().toLowerCase() : 'a';
             if(ansChar === 'b') correctIndex = 1;
-            if(ansChar === 'c') correctIndex = 2;
-            if(ansChar === 'd') correctIndex = 3;
+            else if(ansChar === 'c') correctIndex = 2;
+            else if(ansChar === 'd') correctIndex = 3;
 
-            // HTML बनाना
             card.innerHTML = `
                 <div class="exam-tag">${q.exam || 'GK'}</div>
                 <div class="q-text" id="q-${index}"></div>
@@ -121,43 +134,43 @@
                 <div class="exp-box" id="exp-${index}"></div>
             `;
             container.appendChild(card);
-
-            // डेटा भरना
+            
+            // Render Content
             updateCardLang(card, q, index, correctIndex);
         });
     }
 
-    // 3. भाषा बदलना और डेटा भरना
     function updateCardLang(card, q, index, correctIndex) {
-        // प्रश्न
         const qText = currentLang === 'en' ? q.q_en : q.q_hi;
-        card.querySelector(`#q-${index}`).innerText = `Q. ${qText}`;
+        card.querySelector(`#q-${index}`).innerText = `Q${index+1}. ${qText}`;
         
-        // ऑप्शन्स
         const optBox = card.querySelector(`#opt-${index}`);
         const expBox = card.querySelector(`#exp-${index}`);
         
-        // बटन तभी दोबारा बनाएं जब तक क्लिक न किया हो
+        // ऑप्शन्स तभी बदलें जब तक उत्तर न दिया हो
         if(!card.classList.contains('answered')) {
             optBox.innerHTML = '';
-            const opts = [q.opt_a, q.opt_b, q.opt_c, q.opt_d]; // Sheet के कॉलम
+            const opts = [q.opt_a, q.opt_b, q.opt_c, q.opt_d];
             
             opts.forEach((opt, i) => {
+                // अगर ऑप्शन खाली है तो न दिखाएं
+                if(!opt) return;
+
                 let btn = document.createElement('button');
                 btn.className = 'opt-btn';
                 btn.innerText = opt;
-                btn.onclick = () => checkAnswer(card, btn, i, correctIndex, q);
+                btn.onclick = () => checkAnswer(card, btn, i, correctIndex);
                 optBox.appendChild(btn);
             });
         }
 
-        // व्याख्या
+        // व्याख्या हमेशा अपडेट करें (ताकि भाषा बदलने पर दिखे)
         const expText = currentLang === 'en' ? q.exp_en : q.exp_hi;
-        expBox.innerHTML = `<strong>Explanation:</strong> ${expText}`;
+        const lbl = currentLang === 'en' ? "Explanation:" : "व्याख्या:";
+        expBox.innerHTML = `<strong>${lbl}</strong> ${expText || 'No explanation available.'}`;
     }
 
-    // 4. उत्तर चेक करना
-    function checkAnswer(card, btn, clickedIdx, correctIdx, q) {
+    function checkAnswer(card, btn, clickedIdx, correctIdx) {
         if(card.classList.contains('answered')) return;
         card.classList.add('answered');
 
@@ -165,38 +178,44 @@
         allBtns.forEach(b => b.disabled = true);
 
         stats.total++;
+        
+        // Border Color Logic
         if(clickedIdx === correctIdx) {
             btn.classList.add('correct');
             stats.correct++;
+            card.style.borderLeftColor = "#27ae60"; // Green Border
         } else {
             btn.classList.add('wrong');
-            allBtns[correctIdx].classList.add('correct');
             stats.wrong++;
+            card.style.borderLeftColor = "#c0392b"; // Red Border
+            
+            // Show correct answer
+            if(allBtns[correctIdx]) allBtns[correctIdx].classList.add('correct');
         }
 
+        // Update Stats UI
         document.getElementById('s-total').innerText = stats.total;
         document.getElementById('s-correct').innerText = stats.correct;
         document.getElementById('s-wrong').innerText = stats.wrong;
         
+        // Show Explanation
         card.querySelector('.exp-box').style.display = 'block';
     }
 
-    // 5. भाषा बटन
     function toggleLang() {
         currentLang = currentLang === 'en' ? 'hi' : 'en';
-        document.getElementById('quiz-container').innerHTML = ''; // Clear old
-        renderQuestions(); // Re-render all
+        document.getElementById('quiz-container').innerHTML = '';
+        renderQuestions();
     }
 
-    // Start App
-    if(SHEET_URL === "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCPCEpMa6Nj55kQ87O2XRHE0pgL3C1dds7SVxqxk-5Iuh7wJIH00p0Q3LkrD8b9gX_GpM_sHlRenRY/pubhtml") {
-        document.getElementById('loader').innerHTML = "⚠️ Please paste your Google Sheet Link in the code!";
-    } else {
-        fetchQuestions();
+    function showError(msg) {
+        const loader = document.getElementById('loader');
+        loader.innerHTML = `<div style="color:red; font-size:1.2rem;">⚠️ ${msg}</div><br><button onclick="location.reload()" style="padding:10px;">Retry</button>`;
     }
+
+    // Start
+    fetchQuestions();
 
 </script>
 </body>
 </html>
-
-
