@@ -1,184 +1,337 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSC/Railway GK Quiz</title>
+    <title>SSC/Railway GK Quiz Hub</title>
     <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --correct: #27ae60;
+            --wrong: #e74c3c;
+            --bg: #f3f4f6;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            background-color: var(--bg);
             margin: 0;
+            padding-top: 70px; /* Header space */
         }
-        .quiz-container {
+
+        /* --- Header & Toggle --- */
+        header {
             background: white;
-            width: 90%;
-            max-width: 600px;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            text-align: center;
+            padding: 15px 20px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-sizing: border-box;
         }
-        h2 {
-            color: #333;
+
+        h1 {
+            margin: 0;
             font-size: 1.2rem;
-            margin-bottom: 20px;
+            color: var(--primary);
         }
+
+        .lang-btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .lang-btn:hover {
+            background: var(--accent);
+        }
+
+        /* --- Quiz Container --- */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .exam-tag {
+            display: inline-block;
+            background: #e1ecf4;
+            color: #39739d;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .q-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
         .options-grid {
             display: grid;
             gap: 10px;
         }
-        .option-btn {
-            background: #fff;
+
+        .opt-btn {
+            background: white;
             border: 2px solid #e0e0e0;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.3s;
+            padding: 12px;
+            border-radius: 8px;
             text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            position: relative;
         }
-        .option-btn:hover:not([disabled]) {
-            background-color: #f9f9f9;
-            border-color: #bbb;
+
+        .opt-btn:hover:not(:disabled) {
+            background: #f8f9fa;
+            border-color: #cbd5e0;
         }
-        /* सही जवाब के लिए स्टाइल */
-        .correct {
-            background-color: #d4edda !important;
-            border-color: #28a745 !important;
+
+        .opt-btn.correct {
+            background: #d4edda;
+            border-color: var(--correct);
             color: #155724;
         }
-        /* गलत जवाब के लिए स्टाइल (Grey जैसा आपने कहा) */
-        .wrong {
-            background-color: #e2e3e5 !important;
-            border-color: #6c757d !important;
-            color: #383d41;
+
+        .opt-btn.wrong {
+            background: #f8d7da;
+            border-color: var(--wrong);
+            color: #721c24;
         }
-        #next-btn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1rem;
-            display: none; /* शुरू में छिपा रहेगा */
+
+        .explanation-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            border-radius: 4px;
+            display: none; /* Hidden initially */
+            font-size: 0.95rem;
+            color: #856404;
         }
-        #loading {
-            font-style: italic;
+
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
             color: #666;
+            font-style: italic;
+            display: none;
         }
+
     </style>
 </head>
 <body>
 
-<div class="quiz-container">
-    <div id="question-box">
-        <p id="loading">प्रश्न लोड हो रहा है...</p>
-        <h2 id="question-text" style="display:none;"></h2>
-    </div>
-    
-    <div class="options-grid" id="options-box">
-        </div>
+<header>
+    <h1 id="site-title">GK Quiz Hub</h1>
+    <button class="lang-btn" onclick="toggleLanguage()" id="lang-toggle">English / हिंदी</button>
+</header>
 
-    <button id="next-btn" onclick="fetchQuestion()">अगला प्रश्न (Next) >></button>
-</div>
+<div class="container" id="quiz-list">
+    </div>
+
+<div class="loading-spinner" id="loader">Loading more questions...</div>
 
 <script>
-    // यह API है जहाँ से प्रश्न आएंगे (फिलहाल यह General Knowledge के मिक्स प्रश्न लाएगा)
-    const API_URL = "https://opentdb.com/api.php?amount=1&type=multiple";
+    // --- DATABASE (प्रश्नों का खजाना) ---
+    // आप बाद में यहाँ और प्रश्न जोड़ सकते हैं
+    const questionDatabase = [
+        {
+            id: 1,
+            exam: "SSC CGL 2023",
+            q_en: "Who was the first Governor-General of independent India?",
+            q_hi: "स्वतंत्र भारत के पहले गवर्नर-जनरल कौन थे?",
+            options_en: ["C. Rajagopalachari", "Lord Mountbatten", "Rajendra Prasad", "Jawaharlal Nehru"],
+            options_hi: ["सी. राजगोपालाचारी", "लॉर्ड माउंटबेटन", "राजेन्द्र प्रसाद", "जवाहरलाल नेहरू"],
+            correct: 1, // Index 1 means 'Lord Mountbatten'
+            exp_en: "Lord Mountbatten was the last Viceroy and the first Governor-General of independent India. C. Rajagopalachari was the first Indian Governor-General.",
+            exp_hi: "लॉर्ड माउंटबेटन अंतिम वायसराय और स्वतंत्र भारत के पहले गवर्नर-जनरल थे। सी. राजगोपालाचारी पहले भारतीय गवर्नर-जनरल थे।"
+        },
+        {
+            id: 2,
+            exam: "RRB NTPC 2021",
+            q_en: "Which gas is known as Laughing Gas?",
+            q_hi: "किस गैस को 'लाफिंग गैस' (हँसाने वाली गैस) के रूप में जाना जाता है?",
+            options_en: ["Nitrogen Dioxide", "Nitrous Oxide", "Carbon Monoxide", "Sulphur Dioxide"],
+            options_hi: ["नाइट्रोजन डाइऑक्साइड", "नाइट्रस ऑक्साइड", "कार्बन मोनोऑक्साइड", "सल्फर डाइऑक्साइड"],
+            correct: 1,
+            exp_en: "Nitrous Oxide (N2O) is commonly known as Laughing Gas. It is used as an anesthetic in surgery and dentistry.",
+            exp_hi: "नाइट्रस ऑक्साइड (N2O) को आमतौर पर लाफिंग गैस के रूप में जाना जाता है। इसका उपयोग सर्जरी और दंत चिकित्सा में एनेस्थेटिक के रूप में किया जाता है।"
+        },
+        {
+            id: 3,
+            exam: "SSC CHSL 2022",
+            q_en: "The study of Universe is known as?",
+            q_hi: "ब्रह्मांड के अध्ययन को क्या कहा जाता है?",
+            options_en: ["Cosmology", "Astrology", "Seismology", "Limnology"],
+            options_hi: ["कॉस्मोलॉजी", "एस्ट्रोलॉजी", "सिस्मोलॉजी", "लिम्नोलॉजी"],
+            correct: 0,
+            exp_en: "Cosmology is a branch of astronomy concerned with the studies of the origin and evolution of the universe.",
+            exp_hi: "कॉस्मोलॉजी खगोल विज्ञान की एक शाखा है जो ब्रह्मांड की उत्पत्ति और विकास के अध्ययन से संबंधित है।"
+        },
+        {
+            id: 4,
+            exam: "Railway Group D 2018",
+            q_en: "What is the pH value of human blood?",
+            q_hi: "मानव रक्त का pH मान क्या होता है?",
+            options_en: ["7.4", "6.5", "8.2", "5.0"],
+            options_hi: ["7.4", "6.5", "8.2", "5.0"],
+            correct: 0,
+            exp_en: "The normal pH of human blood is about 7.4, which is slightly basic (alkaline).",
+            exp_hi: "मानव रक्त का सामान्य pH लगभग 7.4 होता है, जो थोड़ा क्षारीय (Basic) होता है।"
+        },
+        {
+            id: 5,
+            exam: "SSC MTS 2020",
+            q_en: "Where is the headquarters of ISRO located?",
+            q_hi: "इसरो (ISRO) का मुख्यालय कहाँ स्थित है?",
+            options_en: ["New Delhi", "Mumbai", "Bengaluru", "Chennai"],
+            options_hi: ["नई दिल्ली", "मुंबई", "बेंगलुरु", "चेन्नई"],
+            correct: 2,
+            exp_en: "The headquarters of Indian Space Research Organisation (ISRO) is in Bengaluru.",
+            exp_hi: "भारतीय अंतरिक्ष अनुसंधान संगठन (ISRO) का मुख्यालय बेंगलुरु में है।"
+        }
+    ];
 
-    async function fetchQuestion() {
-        const questionText = document.getElementById('question-text');
-        const optionsBox = document.getElementById('options-box');
-        const nextBtn = document.getElementById('next-btn');
-        const loading = document.getElementById('loading');
+    // --- LOGIC ---
+    
+    let currentLang = 'en'; // Default language
+    let loadedCount = 0;
+    const loadBatchSize = 3; // एक बार में कितने प्रश्न लोड होंगे
+    let isFetching = false;
 
-        // रिसेट करें
-        questionText.style.display = 'none';
-        optionsBox.innerHTML = '';
-        nextBtn.style.display = 'none';
-        loading.style.display = 'block';
+    // DOM Elements
+    const quizList = document.getElementById('quiz-list');
+    const langBtn = document.getElementById('lang-toggle');
+    const loader = document.getElementById('loader');
 
-        try {
-            // ऑनलाइन प्रश्न लाना
-            const response = await fetch(API_URL);
-            const data = await response.json();
-            
-            if(data.results.length > 0) {
-                const qData = data.results[0];
-                displayQuestion(qData);
-            } else {
-                questionText.innerText = "Error loading question.";
+    // 1. Language Toggle Function
+    function toggleLanguage() {
+        currentLang = currentLang === 'en' ? 'hi' : 'en';
+        langBtn.innerText = currentLang === 'en' ? "Change to Hindi" : "Change to English";
+        document.getElementById('site-title').innerText = currentLang === 'en' ? "GK Quiz Hub" : "GK क्विज हब";
+        
+        // पेज रीलोड किए बिना टेक्स्ट बदलें (सभी कार्ड्स को खाली करके फिर से लोड करें)
+        quizList.innerHTML = '';
+        loadedCount = 0;
+        loadMoreQuestions();
+    }
+
+    // 2. Load Questions Function
+    function loadMoreQuestions() {
+        if (isFetching) return;
+        isFetching = true;
+        loader.style.display = 'block';
+
+        // नकली लोडिंग टाइम (ताकि यूजर को लगे लोड हो रहा है)
+        setTimeout(() => {
+            // Infinite Scroll Logic: डेटाबेस खत्म होने पर फिर से शुरू से प्रश्न दिखाएं (Loop)
+            for (let i = 0; i < loadBatchSize; i++) {
+                // Modulo operator (%) का उपयोग करके प्रश्नों को रिपीट करें
+                const dataIndex = loadedCount % questionDatabase.length; 
+                createQuestionCard(questionDatabase[dataIndex], loadedCount);
+                loadedCount++;
             }
-        } catch (error) {
-            console.error("Error:", error);
-            questionText.innerText = "इंटरनेट चेक करें या दोबारा कोशिश करें।";
-            loading.style.display = 'none';
-            questionText.style.display = 'block';
-            nextBtn.style.display = 'block';
+            isFetching = false;
+            loader.style.display = 'none';
+        }, 800);
+    }
+
+    // 3. Create HTML Card for a Question
+    function createQuestionCard(data, uniqueId) {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        
+        // Language selection based on currentLang
+        const questionText = currentLang === 'en' ? data.q_en : data.q_hi;
+        const options = currentLang === 'en' ? data.options_en : data.options_hi;
+        const explanation = currentLang === 'en' ? data.exp_en : data.exp_hi;
+        const expLabel = currentLang === 'en' ? "Explanation:" : "व्याख्या:";
+
+        // HTML Structure
+        card.innerHTML = `
+            <span class="exam-tag">${data.exam}</span>
+            <div class="q-text">Q. ${questionText}</div>
+            <div class="options-grid" id="opt-grid-${uniqueId}">
+                ${options.map((opt, idx) => `
+                    <button class="opt-btn" onclick="checkAnswer(this, ${idx}, ${data.correct}, '${uniqueId}')">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+            <div class="explanation-box" id="exp-${uniqueId}">
+                <strong>${expLabel}</strong><br>
+                ${explanation}
+            </div>
+        `;
+        
+        quizList.appendChild(card);
+    }
+
+    // 4. Check Answer Logic
+    window.checkAnswer = function(btn, selectedIdx, correctIdx, uniqueId) {
+        const grid = document.getElementById(`opt-grid-${uniqueId}`);
+        const buttons = grid.getElementsByClassName('opt-btn');
+        const expBox = document.getElementById(`exp-${uniqueId}`);
+
+        // Disable all buttons
+        for (let b of buttons) {
+            b.disabled = true;
         }
-    }
 
-    function displayQuestion(qData) {
-        const questionText = document.getElementById('question-text');
-        const optionsBox = document.getElementById('options-box');
-        const loading = document.getElementById('loading');
-
-        // प्रश्न दिखाना (HTML entities decode करने के साथ)
-        questionText.innerHTML = qData.question; 
-        
-        // ऑप्शन्स को मिक्स करना (Shuffle)
-        let options = [...qData.incorrect_answers, qData.correct_answer];
-        options.sort(() => Math.random() - 0.5);
-
-        loading.style.display = 'none';
-        questionText.style.display = 'block';
-
-        options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.classList.add('option-btn');
-            btn.innerHTML = opt;
-            
-            // क्लिक करने पर क्या होगा
-            btn.onclick = () => checkAnswer(btn, opt, qData.correct_answer);
-            
-            optionsBox.appendChild(btn);
-        });
-    }
-
-    function checkAnswer(selectedBtn, selectedOption, correctOption) {
-        const buttons = document.querySelectorAll('.option-btn');
-        
-        // सभी बटन डिसेबल करें ताकि दोबारा क्लिक न हो
-        buttons.forEach(btn => btn.disabled = true);
-
-        if (selectedOption === correctOption) {
-            // अगर सही चुना तो हरा करें
-            selectedBtn.classList.add('correct');
+        if (selectedIdx === correctIdx) {
+            btn.classList.add('correct');
         } else {
-            // अगर गलत चुना तो उसे Grey करें
-            selectedBtn.classList.add('wrong');
-            
-            // और सही वाले को ढूँढकर हरा करें
-            buttons.forEach(btn => {
-                if (btn.innerHTML === correctOption) {
-                    btn.classList.add('correct');
-                }
-            });
+            btn.classList.add('wrong');
+            buttons[correctIdx].classList.add('correct'); // Show correct answer
         }
 
-        // Next बटन दिखाएं
-        document.getElementById('next-btn').style.display = 'inline-block';
-    }
+        // Show Explanation
+        expBox.style.display = 'block';
+    };
 
-    // पेज लोड होते ही पहला प्रश्न लाएं
-    fetchQuestion();
+    // 5. Infinite Scroll Event Listener
+    window.addEventListener('scroll', () => {
+        // अगर यूजर पेज के नीचे पहुँचने वाला है (300px पहले)
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+            loadMoreQuestions();
+        }
+    });
+
+    // Initial Load
+    loadMoreQuestions();
+
 </script>
 
 </body>
