@@ -3,388 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarkari Exam Portal</title>
+    <title>Live Server Quiz</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #3498db;
-            --correct: #27ae60;
-            --wrong: #e74c3c;
-            --bg: #f4f6f9;
-        }
+        :root { --primary: #2c3e50; --accent: #2980b9; --bg: #ecf0f1; --card: #fff; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+        /* HEADER */
+        header { background: #fff; padding: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .stats { font-weight: bold; font-size: 0.9rem; }
+        .green { color: green; } .red { color: red; }
 
-        /* --- LOGIN MODAL (Overlay) --- */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(44, 62, 80, 0.95);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 2000;
-        }
-
-        .login-box {
-            background: white; padding: 30px; border-radius: 12px;
-            text-align: center; width: 300px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-
-        .login-box h2 { margin-top: 0; color: var(--primary); }
-        .login-box input {
-            width: 90%; padding: 12px; margin: 15px 0;
-            border: 2px solid #ddd; border-radius: 6px; font-size: 1rem;
-        }
-        .start-btn {
-            background: var(--accent); color: white; border: none;
-            padding: 12px 25px; border-radius: 6px; cursor: pointer;
-            font-size: 1.1rem; width: 100%;
-        }
-
-        /* --- DASHBOARD (Top Bar) --- */
-        #top-bar {
-            background: white; padding: 10px 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex; justify-content: space-between; align-items: center;
-            z-index: 100;
-        }
-
-        .user-info { font-weight: bold; color: var(--primary); }
-        .stats-strip { display: flex; gap: 15px; font-size: 0.9rem; }
-        .stat-val { font-weight: bold; margin-left: 5px; }
-        .s-green { color: var(--correct); }
-        .s-red { color: var(--wrong); }
-
-        /* --- MAIN QUIZ AREA --- */
-        #main-area {
-            flex: 1; overflow-y: auto; padding: 15px;
-            scroll-behavior: smooth;
-        }
-
-        .container { max-width: 700px; margin: 0 auto; padding-bottom: 60px; }
-
-        .question-card {
-            background: white; border-radius: 10px; padding: 15px;
-            margin-bottom: 20px; box-shadow: 0 3px 6px rgba(0,0,0,0.05);
-            animation: fadeIn 0.4s ease;
-        }
-
+        /* QUIZ AREA */
+        #quiz-container { max-width: 700px; margin: 20px auto; padding: 10px; }
+        
+        .card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .exam-tag {
-            background: #e1ecf4; color: #39739d;
-            padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;
-        }
+        .exam-tag { background: #e0f7fa; color: #006064; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .q-text { font-size: 1.1rem; margin: 10px 0; font-weight: 600; color: #333; }
+
+        .opt-btn { width: 100%; padding: 12px; margin-bottom: 8px; border: 1px solid #ddd; background: #fff; text-align: left; cursor: pointer; border-radius: 5px; }
+        .opt-btn:hover { background: #f9f9f9; }
         
-        .repeat-tag {
-            background: #ffebee; color: #c62828; padding: 3px 8px; 
-            border-radius: 4px; font-size: 0.75rem; font-weight: 700; margin-left: 5px;
-        }
+        .correct { background: #d4edda !important; border-color: green !important; }
+        .wrong { background: #f8d7da !important; border-color: red !important; }
 
-        .q-text { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin: 10px 0 15px 0; }
+        .exp-box { display: none; margin-top: 10px; background: #fff3cd; padding: 10px; font-size: 0.9rem; border-radius: 5px; }
 
-        .opt-btn {
-            display: block; width: 100%; text-align: left;
-            background: white; border: 1.5px solid #e0e0e0;
-            padding: 12px; border-radius: 8px; margin-bottom: 8px;
-            cursor: pointer; font-size: 0.95rem; color: #444;
-        }
+        /* LOADING */
+        #loader { text-align: center; margin-top: 50px; font-size: 1.2rem; color: #666; }
 
-        .opt-btn.correct { background: #d4edda; border-color: var(--correct); color: #155724; font-weight: bold; }
-        .opt-btn.wrong { background: #f8d7da; border-color: var(--wrong); color: #721c24; }
-
-        .explanation-box {
-            margin-top: 10px; padding: 12px; background: #fff3cd;
-            border-left: 4px solid #ffc107; border-radius: 4px;
-            display: none; font-size: 0.9rem; color: #856404;
-        }
-
-        /* Float Buttons */
-        .float-btns {
-            position: fixed; bottom: 20px; right: 20px;
-            display: flex; gap: 10px; z-index: 1000;
-        }
-        .circle-btn {
-            width: 50px; height: 50px; border-radius: 50%; border: none;
-            color: white; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex;
-            justify-content: center; align-items: center;
-        }
-        .btn-lang { background: var(--primary); }
-        .btn-reset { background: var(--wrong); font-size: 0.8rem; }
-
+        /* FLOATING BTN */
+        .fab { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; width: 50px; height: 50px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="login-box">
-            <h2>Welcome Student</h2>
-            <p>Enter your ID/Name to save progress</p>
-            <input type="text" id="username-input" placeholder="Ex: Rinku123">
-            <button class="start-btn" onclick="loginUser()">Start Quiz</button>
-        </div>
+<header>
+    <div>Server Mode: <span style="color:green">● Live</span></div>
+    <div class="stats">
+        Total: <span id="s-total">0</span> | 
+        <span class="green">✔ <span id="s-correct">0</span></span> | 
+        <span class="red">✘ <span id="s-wrong">0</span></span>
     </div>
+</header>
 
-    <div id="top-bar">
-        <div class="user-info">👤 <span id="display-name">Guest</span></div>
-        <div class="stats-strip">
-            <span>Attempted: <span class="stat-val" id="s-total">0</span></span>
-            <span>✅ <span class="stat-val s-green" id="s-correct">0</span></span>
-            <span>❌ <span class="stat-val s-red" id="s-wrong">0</span></span>
-        </div>
-    </div>
+<div id="loader">Connecting to Server...<br><small>Fetching Questions from Sheet</small></div>
+<div id="quiz-container"></div>
 
-    <div id="main-area">
-        <div class="container" id="quiz-list"></div>
-        <div style="text-align:center; color:#888; padding:20px;" id="loader">Loading...</div>
-    </div>
-
-    <div class="float-btns">
-        <button class="circle-btn btn-reset" onclick="resetProgress()" title="Reset All Data">Reset</button>
-        <button class="circle-btn btn-lang" onclick="toggleLanguage()">A/अ</button>
-    </div>
+<button class="fab" onclick="toggleLang()">A/अ</button>
 
 <script>
-    // --- DATA SECTION (Sample Questions) ---
-    // Note: ID must be unique
-    const originalDB = [
-        { id: 1, exam: "SSC CGL", q_en: "Who is the first citizen of India?", q_hi: "भारत का प्रथम नागरिक कौन होता है?", opt_en: ["PM", "President", "CJI", "Governor"], opt_hi: ["प्रधानमंत्री", "राष्ट्रपति", "मुख्य न्यायाधीश", "राज्यपाल"], correct: 1, exp_en: "The President is the head of state.", exp_hi: "राष्ट्रपति भारत के राज्य प्रमुख हैं।" },
-        { id: 2, exam: "NTPC", q_en: "Which gas is used in chips packets?", q_hi: "चिप्स के पैकेट में कौन सी गैस भरी जाती है?", opt_en: ["Oxygen", "Nitrogen", "Hydrogen", "Argon"], opt_hi: ["ऑक्सीजन", "नाइट्रोजन", "हाइड्रोजन", "आर्गन"], correct: 1, exp_en: "Nitrogen prevents oxidation.", exp_hi: "नाइट्रोजन चिप्स को खराब होने से बचाती है।" },
-        { id: 3, exam: "Group D", q_en: "Unit of Force?", q_hi: "बल (Force) की इकाई?", opt_en: ["Joule", "Watt", "Newton", "Pascal"], opt_hi: ["जूल", "वाट", "न्यूटन", "पास्कल"], correct: 2, exp_en: "Newton (N).", exp_hi: "न्यूटन (N)." },
-        { id: 4, exam: "CHSL", q_en: "Capital of Australia?", q_hi: "ऑस्ट्रेलिया की राजधानी?", opt_en: ["Sydney", "Melbourne", "Canberra", "Perth"], opt_hi: ["सिडनी", "मेलबर्न", "कैनबरा", "पर्थ"], correct: 2, exp_en: "Canberra.", exp_hi: "कैनबरा।" },
-        { id: 5, exam: "MTS", q_en: "Hardest substance on Earth?", q_hi: "पृथ्वी पर सबसे कठोर पदार्थ?", opt_en: ["Gold", "Iron", "Diamond", "Platinum"], opt_hi: ["सोना", "लोहा", "हीरा", "प्लैटिनम"], correct: 2, exp_en: "Diamond.", exp_hi: "हीरा।" }
-        // यहाँ आप हज़ारों प्रश्न डाल सकते हैं
-    ];
+    // ==========================================
+    // 👇 यहाँ अपनी GOOGLE SHEET का लिंक पेस्ट करें 👇
+    // ==========================================
+    const SHEET_URL = "YOUR_GOOGLE_SHEET_LINK_HERE";
+    // ==========================================
 
-    // --- VARIABLES ---
-    let currentUser = "";
-    let userData = {
-        lastIndex: 0,
-        stats: { total: 0, correct: 0, wrong: 0 },
-        wrongQueue: [] // To store IDs of wrong questions
-    };
-    
+    let allQuestions = [];
     let currentLang = 'en';
-    const BATCH_SIZE = 5;
-    const MAX_DOM_SIZE = 20; // Memory cleaner limit
-    
-    let renderQueue = []; // Questions currently to be shown logic
-    let renderedCount = 0; // How many rendered in current session
+    let stats = { total: 0, correct: 0, wrong: 0 };
 
-    // --- 1. LOGIN SYSTEM ---
-    function loginUser() {
-        const input = document.getElementById('username-input').value.trim();
-        if(!input) return alert("Please enter a name");
-        
-        currentUser = input;
-        document.getElementById('display-name').innerText = currentUser;
-        document.getElementById('login-screen').style.display = 'none';
+    // 1. Google Sheet से डेटा लाना (The Magic)
+    function fetchQuestions() {
+        // लिंक को CSV फॉर्मेट में बदलना
+        let csvUrl = SHEET_URL.replace('/edit#gid=', '/export?format=csv&gid=').replace('/edit?usp=sharing', '/export?format=csv');
 
-        // Load Data from LocalStorage
-        const savedData = localStorage.getItem('quiz_data_' + currentUser);
-        if(savedData) {
-            userData = JSON.parse(savedData);
-            alert(`Welcome back, ${currentUser}! Resuming from Q.${userData.lastIndex + 1}`);
-        } else {
-            // New User
-            userData = { lastIndex: 0, stats: { total: 0, correct: 0, wrong: 0 }, wrongQueue: [] };
-        }
-
-        updateStatsUI();
-        loadNextBatch();
-    }
-
-    function saveData() {
-        if(currentUser) {
-            localStorage.setItem('quiz_data_' + currentUser, JSON.stringify(userData));
-        }
-    }
-
-    function resetProgress() {
-        if(confirm("Are you sure? This will delete all your progress.")) {
-            localStorage.removeItem('quiz_data_' + currentUser);
-            location.reload();
-        }
-    }
-
-    // --- 2. QUIZ LOGIC ---
-    
-    function loadNextBatch() {
-        const loader = document.getElementById('loader');
-        loader.style.display = 'block';
-
-        // Decide which questions to load
-        // We load from originalDB starting at userData.lastIndex
-        
-        setTimeout(() => {
-            let count = 0;
-            let dbIndex = userData.lastIndex;
-
-            while(count < BATCH_SIZE) {
-                // Priority 1: Check if any Repeated (Wrong) questions are pending?
-                // For simplicity in this robust version, we mix them or prioritize them.
-                // Let's keep it simple: Linear progress first.
+        Papa.parse(csvUrl, {
+            download: true,
+            header: true,
+            complete: function(results) {
+                // खाली पंक्तियाँ हटाना
+                allQuestions = results.data.filter(row => row.q_en && row.q_en.trim() !== "");
                 
-                if (dbIndex < originalDB.length) {
-                    createCard(originalDB[dbIndex], false);
-                    dbIndex++;
-                    count++;
+                // Shuffle (प्रश्नों को मिक्स करना)
+                allQuestions.sort(() => Math.random() - 0.5);
+                
+                document.getElementById('loader').style.display = 'none';
+                
+                if(allQuestions.length === 0) {
+                    alert("Sheet से कोई डेटा नहीं मिला! कृपया हेडर (Headers) चेक करें।");
                 } else {
-                    // DB Finished? Check Wrong Queue
-                    if(userData.wrongQueue.length > 0) {
-                        // Pick a wrong question
-                        let wrongId = userData.wrongQueue.shift(); // Take from front
-                        let qData = originalDB.find(q => q.id === wrongId);
-                        if(qData) createCard(qData, true);
-                        // Don't increment dbIndex here as we are in replay mode
-                        count++;
-                    } else {
-                        loader.innerText = "All Questions Completed!";
-                        break;
-                    }
+                    renderQuestions();
                 }
+            },
+            error: function(err) {
+                document.getElementById('loader').innerHTML = "Server Error! Link Check karein.";
+                console.error(err);
             }
-            
-            // Update Global Index only if we progressed in DB
-            // (If we are doing repeated questions, lastIndex shouldn't move ideally, 
-            // but for simple sync let's update where we are in main DB)
-            userData.lastIndex = dbIndex;
-            saveData();
-            
-            cleanMemory();
-            if(dbIndex < originalDB.length || userData.wrongQueue.length > 0) loader.style.display = 'none';
-        }, 500);
-    }
-
-    function createCard(data, isRepeat) {
-        const container = document.getElementById('quiz-list');
-        const card = document.createElement('div');
-        card.className = 'question-card';
-        card.setAttribute('data-qid', data.id);
-
-        const repeatHtml = isRepeat ? `<span class="repeat-tag">REVISION</span>` : '';
-
-        card.innerHTML = `
-            <div><span class="exam-tag">${data.exam}</span>${repeatHtml}</div>
-            <div class="q-text"></div>
-            <div class="options-box"></div>
-            <div class="explanation-box"></div>
-        `;
-
-        // Render Text
-        updateCardContent(card, data);
-
-        container.appendChild(card);
-    }
-
-    function updateCardContent(card, data) {
-        const qText = currentLang === 'en' ? data.q_en : data.q_hi;
-        card.querySelector('.q-text').innerText = `Q. ${qText}`;
-        
-        const optBox = card.querySelector('.options-box');
-        optBox.innerHTML = ''; // Clear old
-
-        const opts = currentLang === 'en' ? data.opt_en : data.opt_hi;
-        
-        // Check if already answered in this DOM session (visual only)
-        if(card.classList.contains('answered')) {
-             // If answered, just show text, no buttons logic needed for this demo
-             // Ideally we lock it.
-        }
-
-        opts.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            btn.className = 'opt-btn';
-            btn.innerText = opt;
-            btn.onclick = () => handleAnswer(card, btn, idx, data);
-            optBox.appendChild(btn);
         });
-
-        const expBox = card.querySelector('.explanation-box');
-        const expPrefix = currentLang === 'en' ? "Explanation: " : "व्याख्या: ";
-        const expContent = currentLang === 'en' ? data.exp_en : data.exp_hi;
-        if(card.classList.contains('answered')) {
-             expBox.innerHTML = `<strong>${expPrefix}</strong> ${expContent}`;
-        }
     }
 
-    function handleAnswer(card, btn, selectedIdx, data) {
+    // 2. प्रश्न स्क्रीन पर दिखाना
+    function renderQuestions() {
+        const container = document.getElementById('quiz-container');
+        // ज्यादा लोड न हो इसलिए अभी पहले 50 दिखा रहे हैं (Infinite Scroll बाद में जोड़ सकते हैं)
+        const batch = allQuestions.slice(0, 50); 
+        
+        batch.forEach((q, index) => {
+            let card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.idx = index; // Language toggle के लिए
+
+            // सही उत्तर को A,B,C,D से 0,1,2,3 इंडेक्स में बदलना
+            let correctIndex = 0;
+            const ansChar = q.correct ? q.correct.toLowerCase().trim() : 'a';
+            if(ansChar === 'b') correctIndex = 1;
+            if(ansChar === 'c') correctIndex = 2;
+            if(ansChar === 'd') correctIndex = 3;
+
+            // HTML बनाना
+            card.innerHTML = `
+                <div class="exam-tag">${q.exam || 'GK'}</div>
+                <div class="q-text" id="q-${index}"></div>
+                <div class="opt-box" id="opt-${index}"></div>
+                <div class="exp-box" id="exp-${index}"></div>
+            `;
+            container.appendChild(card);
+
+            // डेटा भरना
+            updateCardLang(card, q, index, correctIndex);
+        });
+    }
+
+    // 3. भाषा बदलना और डेटा भरना
+    function updateCardLang(card, q, index, correctIndex) {
+        // प्रश्न
+        const qText = currentLang === 'en' ? q.q_en : q.q_hi;
+        card.querySelector(`#q-${index}`).innerText = `Q. ${qText}`;
+        
+        // ऑप्शन्स
+        const optBox = card.querySelector(`#opt-${index}`);
+        const expBox = card.querySelector(`#exp-${index}`);
+        
+        // बटन तभी दोबारा बनाएं जब तक क्लिक न किया हो
+        if(!card.classList.contains('answered')) {
+            optBox.innerHTML = '';
+            const opts = [q.opt_a, q.opt_b, q.opt_c, q.opt_d]; // Sheet के कॉलम
+            
+            opts.forEach((opt, i) => {
+                let btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(card, btn, i, correctIndex, q);
+                optBox.appendChild(btn);
+            });
+        }
+
+        // व्याख्या
+        const expText = currentLang === 'en' ? q.exp_en : q.exp_hi;
+        expBox.innerHTML = `<strong>Explanation:</strong> ${expText}`;
+    }
+
+    // 4. उत्तर चेक करना
+    function checkAnswer(card, btn, clickedIdx, correctIdx, q) {
         if(card.classList.contains('answered')) return;
         card.classList.add('answered');
 
         const allBtns = card.querySelectorAll('.opt-btn');
         allBtns.forEach(b => b.disabled = true);
 
-        const expBox = card.querySelector('.explanation-box');
-        const expPrefix = currentLang === 'en' ? "Explanation: " : "व्याख्या: ";
-        const expContent = currentLang === 'en' ? data.exp_en : data.exp_hi;
-
-        userData.stats.total++;
-
-        if(selectedIdx === data.correct) {
+        stats.total++;
+        if(clickedIdx === correctIdx) {
             btn.classList.add('correct');
-            userData.stats.correct++;
+            stats.correct++;
         } else {
             btn.classList.add('wrong');
-            allBtns[data.correct].classList.add('correct');
-            userData.stats.wrong++;
-            
-            // Add to Wrong Queue for later Revision
-            // Avoid duplicates in queue
-            if(!userData.wrongQueue.includes(data.id)) {
-                userData.wrongQueue.push(data.id);
-            }
+            allBtns[correctIdx].classList.add('correct');
+            stats.wrong++;
         }
 
-        updateStatsUI();
-        saveData(); // Save immediately
-
-        expBox.style.display = 'block';
-        expBox.innerHTML = `<strong>${expPrefix}</strong> ${expContent}`;
+        document.getElementById('s-total').innerText = stats.total;
+        document.getElementById('s-correct').innerText = stats.correct;
+        document.getElementById('s-wrong').innerText = stats.wrong;
+        
+        card.querySelector('.exp-box').style.display = 'block';
     }
 
-    function toggleLanguage() {
+    // 5. भाषा बटन
+    function toggleLang() {
         currentLang = currentLang === 'en' ? 'hi' : 'en';
-        // Reload visible cards text
-        const cards = document.querySelectorAll('.question-card');
-        cards.forEach(card => {
-            const qid = parseInt(card.getAttribute('data-qid'));
-            const data = originalDB.find(q => q.id === qid);
-            if(data) updateCardContent(card, data);
-        });
+        document.getElementById('quiz-container').innerHTML = ''; // Clear old
+        renderQuestions(); // Re-render all
     }
 
-    function updateStatsUI() {
-        document.getElementById('s-total').innerText = userData.stats.total;
-        document.getElementById('s-correct').innerText = userData.stats.correct;
-        document.getElementById('s-wrong').innerText = userData.stats.wrong;
+    // Start App
+    if(SHEET_URL === "YOUR_GOOGLE_SHEET_LINK_HERE") {
+        document.getElementById('loader').innerHTML = "⚠️ Please paste your Google Sheet Link in the code!";
+    } else {
+        fetchQuestions();
     }
-
-    function cleanMemory() {
-        const cards = document.querySelectorAll('.question-card');
-        if(cards.length > MAX_DOM_SIZE) {
-            // Remove from top
-            for(let i=0; i < cards.length - MAX_DOM_SIZE; i++) {
-                cards[i].remove();
-            }
-        }
-    }
-
-    // Infinite Scroll
-    const mainArea = document.getElementById('main-area');
-    mainArea.addEventListener('scroll', () => {
-        if(mainArea.scrollTop + mainArea.clientHeight >= mainArea.scrollHeight - 100) {
-            loadNextBatch();
-        }
-    });
 
 </script>
 </body>
