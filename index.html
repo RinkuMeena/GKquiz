@@ -3,219 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarkari Exam Live Quiz</title>
+    <title>ExamHub Live Quiz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --accent: #2980b9; --bg: #f4f7f6; --card: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
-
-        /* HEADER */
-        header { background: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .logo { font-weight: 800; font-size: 1.2rem; color: var(--primary); }
-        .stats { font-weight: bold; font-size: 0.9rem; display: flex; gap: 15px; }
-        .stat-box { background: #f8f9fa; padding: 5px 10px; border-radius: 20px; border: 1px solid #eee; }
-        .green { color: #27ae60; } .red { color: #c0392b; }
-
-        /* QUIZ AREA */
-        #quiz-container { max-width: 700px; margin: 20px auto; padding: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 80px; }
+        header { background: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .logo { font-weight: 800; color: #2c3e50; }
+        .stats { font-weight: bold; font-size: 0.9rem; }
         
-        .card { background: var(--card); padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); animation: slideUp 0.4s ease; border-left: 5px solid transparent; }
-        .card:hover { transform: translateY(-2px); transition: 0.3s; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .exam-tag { background: #e3f2fd; color: #1565c0; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; display: inline-block; letter-spacing: 0.5px; }
-        .q-text { font-size: 1.15rem; margin: 15px 0; font-weight: 600; color: #34495e; line-height: 1.5; }
-
-        .opt-btn { width: 100%; padding: 14px; margin-bottom: 10px; border: 2px solid #f1f2f6; background: #fff; text-align: left; cursor: pointer; border-radius: 8px; font-size: 1rem; color: #555; transition: all 0.2s; }
-        .opt-btn:hover:not([disabled]) { background: #f8f9fa; border-color: #dcdde1; }
+        #quiz-container { max-width: 700px; margin: 20px auto; padding: 10px; }
+        .card { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid transparent; }
         
-        .correct { background: #d4edda !important; border-color: #27ae60 !important; color: #155724 !important; font-weight: 600; }
-        .wrong { background: #f8d7da !important; border-color: #c0392b !important; color: #721c24 !important; }
-
-        .exp-box { display: none; margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 8px; font-size: 0.95rem; color: #856404; border-left: 4px solid #ffeeba; }
-
-        /* LOADING & ERROR */
-        #loader { text-align: center; margin-top: 100px; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* FLOATING BTN */
-        .fab { position: fixed; bottom: 25px; right: 25px; background: var(--primary); color: white; width: 55px; height: 55px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(44, 62, 80, 0.4); font-size: 1rem; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .fab:active { transform: scale(0.95); }
-
+        .q-text { font-size: 1.15rem; font-weight: 600; color: #333; margin: 15px 0; }
+        .opt-btn { width: 100%; padding: 12px; margin-bottom: 8px; border: 1px solid #ddd; background: #fff; text-align: left; cursor: pointer; border-radius: 6px; font-size: 1rem; color: #444; transition: 0.2s; }
+        .opt-btn:hover { background: #f9f9f9; }
+        
+        .correct { background: #d4edda !important; border-color: #28a745 !important; color: #155724 !important; }
+        .wrong { background: #f8d7da !important; border-color: #dc3545 !important; color: #721c24 !important; }
+        
+        .exp-box { display: none; margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 8px; color: #856404; }
+        
+        #loader { text-align: center; margin-top: 80px; }
+        .fab { position: fixed; bottom: 25px; right: 25px; background: #2c3e50; color: white; width: 55px; height: 55px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 1rem; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">ExamHub <span style="font-size:0.8rem; color:green; font-weight:normal">● Live</span></div>
-    <div class="stats">
-        <div class="stat-box">Total: <span id="s-total">0</span></div>
-        <div class="stat-box green">✔ <span id="s-correct">0</span></div>
-        <div class="stat-box red">✘ <span id="s-wrong">0</span></div>
-    </div>
+    <div class="logo">ExamHub <span style="color:green; font-size:0.8rem">● Online</span></div>
+    <div class="stats">Score: <span id="s-correct">0</span> / <span id="s-total">0</span></div>
 </header>
 
-<div id="loader">
-    <div class="spinner"></div>
-    <div id="status-text">Connecting to Google Sheet...</div>
-</div>
-
+<div id="loader">Loading Questions...</div>
 <div id="quiz-container"></div>
-
-<button class="fab" onclick="toggleLang()" title="Switch Language">A/अ</button>
+<button class="fab" onclick="toggleLang()">A/अ</button>
 
 <script>
-    // ==========================================
-    // ✅ YOUR FIXED LINK (CSV MODE)
-    // ==========================================
-    // मैंने आपके लिंक से 'pubhtml' हटाकर 'pub?output=csv' कर दिया है
+    // ✅ लिंक पहले से सेट है
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCPCEpMa6Nj55kQ87O2XRHE0pgL3C1dds7SVxqxk-5Iuh7wJIH00p0Q3LkrD8b9gX_GpM_sHlRenRY/pub?output=csv";
-    
-    // ==========================================
 
     let allQuestions = [];
     let currentLang = 'en';
-    let stats = { total: 0, correct: 0, wrong: 0 };
+    let stats = { total: 0, correct: 0 };
 
-    function fetchQuestions() {
+    function init() {
         Papa.parse(SHEET_URL, {
             download: true,
             header: true,
             skipEmptyLines: true,
+            transformHeader: h => h.toLowerCase().trim(), // Headers को clean करता है
             complete: function(results) {
-                // डेटा चेक करें
-                if (results.data && results.data.length > 0) {
-                    // सिर्फ वो प्रश्न लें जिनमें 'exam' और 'q_en' भरा हुआ हो
-                    allQuestions = results.data.filter(row => row.exam && row.q_en);
-                    
-                    if(allQuestions.length === 0) {
-                        showError("Sheet खाली है या Headers गलत हैं।");
-                        return;
-                    }
-
-                    // Shuffle Questions
-                    allQuestions.sort(() => Math.random() - 0.5);
-                    
+                if (results.data.length > 0) {
+                    allQuestions = results.data.filter(q => q.q_en); // खाली Rows हटाएं
+                    allQuestions.sort(() => Math.random() - 0.5); // Shuffle
                     document.getElementById('loader').style.display = 'none';
-                    renderQuestions();
+                    renderQuiz();
                 } else {
-                    showError("No data found in Sheet.");
+                    alert("Sheet Empty है!");
                 }
             },
-            error: function(err) {
-                showError("Connection Failed! Internet check karein.");
-                console.error(err);
-            }
+            error: () => alert("Link Error!")
         });
     }
 
-    function renderQuestions() {
+    function renderQuiz() {
         const container = document.getElementById('quiz-container');
-        // एक बार में 100 प्रश्न लोड करें (बाद में और लोड कर सकते हैं)
-        const batch = allQuestions.slice(0, 100); 
+        container.innerHTML = '';
         
-        batch.forEach((q, index) => {
+        allQuestions.slice(0, 50).forEach((q, idx) => {
             let card = document.createElement('div');
             card.className = 'card';
-            card.dataset.idx = index;
+            
+            // --- SMART LANGUAGE LOGIC (FALLBACK) ---
+            // अगर हिंदी टेक्स्ट नहीं मिला, तो इंग्लिश दिखाओ (खाली मत छोड़ो)
+            const qText = (currentLang === 'hi' && q.q_hi) ? q.q_hi : q.q_en;
+            const expText = (currentLang === 'hi' && q.exp_hi) ? q.exp_hi : q.exp_en;
+            
+            // Options Logic:
+            // अगर Sheet में 'opt_a_hi' नाम का कॉलम है, तो उसे लो, वरना 'opt_a' लो
+            let optA = (currentLang === 'hi' && q.opt_a_hi) ? q.opt_a_hi : q.opt_a;
+            let optB = (currentLang === 'hi' && q.opt_b_hi) ? q.opt_b_hi : q.opt_b;
+            let optC = (currentLang === 'hi' && q.opt_c_hi) ? q.opt_c_hi : q.opt_c;
+            let optD = (currentLang === 'hi' && q.opt_d_hi) ? q.opt_d_hi : q.opt_d;
 
-            // Correct Answer Calculation (A/B/C/D -> 0/1/2/3)
-            let correctIndex = 0;
-            const ansChar = q.correct ? q.correct.toString().trim().toLowerCase() : 'a';
-            if(ansChar === 'b') correctIndex = 1;
-            else if(ansChar === 'c') correctIndex = 2;
-            else if(ansChar === 'd') correctIndex = 3;
+            // Correct Answer logic
+            let correctIdx = 0;
+            const ans = q.correct ? q.correct.toLowerCase().trim() : 'a';
+            if(ans === 'b') correctIdx = 1;
+            if(ans === 'c') correctIdx = 2;
+            if(ans === 'd') correctIdx = 3;
 
             card.innerHTML = `
-                <div class="exam-tag">${q.exam || 'GK'}</div>
-                <div class="q-text" id="q-${index}"></div>
-                <div class="opt-box" id="opt-${index}"></div>
-                <div class="exp-box" id="exp-${index}"></div>
+                <div style="font-size:0.8rem; color:#1565c0; font-weight:bold; margin-bottom:5px;">${q.exam || 'GK'}</div>
+                <div class="q-text">Q${idx+1}. ${qText}</div>
+                <div class="opt-box"></div>
+                <div class="exp-box"><strong>${currentLang==='en'?'Explanation':'व्याख्या'}:</strong> ${expText || '-'}</div>
             `;
-            container.appendChild(card);
             
-            // Render Content
-            updateCardLang(card, q, index, correctIndex);
-        });
-    }
-
-    function updateCardLang(card, q, index, correctIndex) {
-        const qText = currentLang === 'en' ? q.q_en : q.q_hi;
-        card.querySelector(`#q-${index}`).innerText = `Q${index+1}. ${qText}`;
-        
-        const optBox = card.querySelector(`#opt-${index}`);
-        const expBox = card.querySelector(`#exp-${index}`);
-        
-        // ऑप्शन्स तभी बदलें जब तक उत्तर न दिया हो
-        if(!card.classList.contains('answered')) {
-            optBox.innerHTML = '';
-            const opts = [q.opt_a, q.opt_b, q.opt_c, q.opt_d];
-            
-            opts.forEach((opt, i) => {
-                // अगर ऑप्शन खाली है तो न दिखाएं
-                if(!opt) return;
-
+            const optBox = card.querySelector('.opt-box');
+            [optA, optB, optC, optD].forEach((opt, i) => {
+                if(!opt) return; // अगर ऑप्शन सच में खाली है तो बटन मत बनाओ
                 let btn = document.createElement('button');
                 btn.className = 'opt-btn';
                 btn.innerText = opt;
-                btn.onclick = () => checkAnswer(card, btn, i, correctIndex);
+                btn.onclick = () => check(card, btn, i, correctIdx);
                 optBox.appendChild(btn);
             });
-        }
 
-        // व्याख्या हमेशा अपडेट करें (ताकि भाषा बदलने पर दिखे)
-        const expText = currentLang === 'en' ? q.exp_en : q.exp_hi;
-        const lbl = currentLang === 'en' ? "Explanation:" : "व्याख्या:";
-        expBox.innerHTML = `<strong>${lbl}</strong> ${expText || 'No explanation available.'}`;
+            container.appendChild(card);
+        });
     }
 
-    function checkAnswer(card, btn, clickedIdx, correctIdx) {
-        if(card.classList.contains('answered')) return;
-        card.classList.add('answered');
-
-        const allBtns = card.querySelectorAll('.opt-btn');
-        allBtns.forEach(b => b.disabled = true);
-
-        stats.total++;
+    function check(card, btn, clicked, correct) {
+        if(card.classList.contains('done')) return;
+        card.classList.add('done');
+        const btns = card.querySelectorAll('.opt-btn');
         
-        // Border Color Logic
-        if(clickedIdx === correctIdx) {
+        stats.total++;
+        if(clicked === correct) {
             btn.classList.add('correct');
             stats.correct++;
-            card.style.borderLeftColor = "#27ae60"; // Green Border
+            card.style.borderLeftColor = "#28a745";
         } else {
             btn.classList.add('wrong');
-            stats.wrong++;
-            card.style.borderLeftColor = "#c0392b"; // Red Border
-            
-            // Show correct answer
-            if(allBtns[correctIdx]) allBtns[correctIdx].classList.add('correct');
+            if(btns[correct]) btns[correct].classList.add('correct');
+            card.style.borderLeftColor = "#dc3545";
         }
-
-        // Update Stats UI
-        document.getElementById('s-total').innerText = stats.total;
-        document.getElementById('s-correct').innerText = stats.correct;
-        document.getElementById('s-wrong').innerText = stats.wrong;
         
-        // Show Explanation
+        document.getElementById('s-correct').innerText = stats.correct;
+        document.getElementById('s-total').innerText = stats.total;
         card.querySelector('.exp-box').style.display = 'block';
     }
 
     function toggleLang() {
         currentLang = currentLang === 'en' ? 'hi' : 'en';
-        document.getElementById('quiz-container').innerHTML = '';
-        renderQuestions();
+        renderQuiz();
     }
 
-    function showError(msg) {
-        const loader = document.getElementById('loader');
-        loader.innerHTML = `<div style="color:red; font-size:1.2rem;">⚠️ ${msg}</div><br><button onclick="location.reload()" style="padding:10px;">Retry</button>`;
-    }
-
-    // Start
-    fetchQuestions();
-
+    init();
 </script>
 </body>
 </html>
