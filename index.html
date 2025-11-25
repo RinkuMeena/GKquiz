@@ -3,84 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExamHub Pro (Revision Mode)</title>
+    <title>ExamHub Premium</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 80px; }
-        
-        /* HEADER */
-        header { 
-            background: #fff; padding: 10px 15px; 
-            display: flex; flex-direction: column; align-items: center; 
-            position: sticky; top: 0; z-index: 1000; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08); 
+        :root {
+            --primary: #4F46E5; /* Indigo */
+            --primary-dark: #4338ca;
+            --success: #10B981; /* Emerald */
+            --danger: #EF4444; /* Red */
+            --background: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-light: #6B7280;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --glass: rgba(255, 255, 255, 0.9);
         }
 
-        .logo { font-weight: 900; color: #2c3e50; font-size: 1.2rem; margin-bottom: 5px; }
-        
-        .stats-box { display: flex; gap: 10px; font-size: 0.9rem; font-weight: bold; }
-        .stat-badge { padding: 5px 12px; border-radius: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .bg-blue { background: #3498db; }
-        .bg-green { background: #27ae60; }
-        .bg-red { background: #e74c3c; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            margin: 0;
+            color: var(--text-main);
+            padding-bottom: 100px;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        /* QUIZ CONTAINER */
-        #quiz-container { max-width: 700px; margin: 20px auto; padding: 10px; }
-        
-        .card { 
-            background: #fff; padding: 20px; margin-bottom: 20px; 
-            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-            border-left: 6px solid transparent; position: relative;
-            transition: all 0.3s ease;
+        /* --- HEADER (Glassmorphism) --- */
+        header {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .brand {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #4F46E5, #9333EA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 12px;
+        }
+
+        .stat-pill {
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.2s;
         }
         
-        /* TAGS */
-        .exam-tag { font-size: 0.75rem; font-weight: bold; color: #1565c0; background: #e3f2fd; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; }
-        .revision-tag { font-size: 0.75rem; font-weight: bold; color: #fff; background: #e67e22; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-left: 8px; animation: pulse 2s infinite; }
+        .stat-pill:hover { transform: scale(1.05); }
+        .s-blue { background: #DBEAFE; color: #1E40AF; }
+        .s-green { background: #D1FAE5; color: #065F46; }
+        .s-red { background: #FEE2E2; color: #991B1B; }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-
-        .q-text { font-size: 1.15rem; font-weight: 600; color: #333; margin-bottom: 15px; line-height: 1.5; }
-        
-        .opt-btn { width: 100%; padding: 14px; margin-bottom: 8px; border: 1px solid #e1e4e8; background: #fff; text-align: left; cursor: pointer; border-radius: 8px; font-size: 1rem; color: #444; transition: 0.2s; }
-        .opt-btn:hover:not([disabled]) { background: #f8f9fa; border-color: #d1d5db; }
-        
-        .correct { background: #d1e7dd !important; border-color: #0f5132 !important; color: #0f5132 !important; font-weight: bold; }
-        .wrong { background: #f8d7da !important; border-color: #842029 !important; color: #842029 !important; }
-        
-        .exp-box { display: none; margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 8px; color: #664d03; border: 1px solid #ffecb5; }
-        
-        #loader { text-align: center; margin-top: 80px; font-size: 1.2rem; color: #666; }
-        .fab { position: fixed; bottom: 25px; right: 25px; background: #2c3e50; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 1.1rem; z-index: 1000; }
-
-        @media (min-width: 600px) {
-            header { flex-direction: row; justify-content: space-between; padding: 15px 30px; }
+        /* --- QUIZ CONTAINER --- */
+        #quiz-container {
+            max-width: 720px;
+            margin: 30px auto;
+            padding: 0 15px;
         }
+
+        /* --- CARD DESIGN --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Badges */
+        .badge-container { margin-bottom: 15px; display: flex; gap: 8px; }
+        
+        .badge {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        
+        .badge-exam { background: #E0E7FF; color: #4338CA; }
+        .badge-rev { background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* Question Text */
+        .q-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* Options Grid */
+        .opt-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .opt-btn {
+            background: #F9FAFB;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 1rem;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+        }
+
+        .opt-btn:hover:not(:disabled) {
+            background: #FFFFFF;
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);
+        }
+
+        /* Answer States */
+        .opt-btn.correct {
+            background: #ECFDF5 !important;
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+        }
+        
+        .opt-btn.correct::after {
+            content: "✔"; position: absolute; right: 20px; font-weight: bold;
+        }
+
+        .opt-btn.wrong {
+            background: #FEF2F2 !important;
+            border-color: var(--danger) !important;
+            color: var(--danger) !important;
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Explanation Box */
+        .exp-box {
+            margin-top: 20px;
+            padding: 16px;
+            background: #FFFBEB;
+            border-radius: 10px;
+            border-left: 4px solid #F59E0B;
+            color: #92400E;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Floating Action Button (FAB) */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            border-radius: 50%;
+            color: white;
+            border: none;
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+            z-index: 2000;
+        }
+
+        .fab:hover { transform: scale(1.1) rotate(5deg); }
+        .fab:active { transform: scale(0.95); }
+
+        /* Loader */
+        #loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            color: var(--text-light);
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid #E5E7EB;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Mobile Responsive */
+        @media (max-width: 640px) {
+            header { flex-direction: column; gap: 10px; padding: 12px; }
+            .stats-container { width: 100%; justify-content: space-between; }
+            .stat-pill { flex: 1; justify-content: center; padding: 8px; }
+            .card { padding: 20px; border-radius: 12px; }
+            .q-text { font-size: 1.1rem; }
+        }
+
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">ExamHub <span style="color:#27ae60;">● Pro</span></div>
-    <div class="stats-box">
-        <div class="stat-badge bg-blue">Attempted: <span id="s-attempted">0</span></div>
-        <div class="stat-badge bg-green">Right: <span id="s-correct">0</span></div>
-        <div class="stat-badge bg-red">Wrong: <span id="s-wrong">0</span></div>
+    <div class="brand">ExamHub <span style="font-size:0.9rem; font-weight:500; color:#10B981; background:#D1FAE5; padding:2px 8px; border-radius:12px; vertical-align:middle;">PRO</span></div>
+    <div class="stats-container">
+        <div class="stat-pill s-blue">
+            <span>📝</span> <span id="s-attempted">0</span>
+        </div>
+        <div class="stat-pill s-green">
+            <span>✨</span> <span id="s-correct">0</span>
+        </div>
+        <div class="stat-pill s-red">
+            <span>🔥</span> <span id="s-wrong">0</span>
+        </div>
     </div>
 </header>
 
-<div id="loader">Loading Data...</div>
+<div id="loader">
+    <div class="spinner"></div>
+    <span>Syncing with Server...</span>
+</div>
+
 <div id="quiz-container"></div>
-<button class="fab" onclick="toggleLang()" title="Change Language">A/अ</button>
+
+<button class="fab" onclick="toggleLang()" title="Switch Language (A/अ)">
+    A/अ
+</button>
 
 <script>
+    // ✅ Your Live Google Sheet Link
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCPCEpMa6Nj55kQ87O2XRHE0pgL3C1dds7SVxqxk-5Iuh7wJIH00p0Q3LkrD8b9gX_GpM_sHlRenRY/pub?output=csv";
 
     let allQuestions = [];
     let currentLang = 'en';
-    let answeredState = {}; // Stores result by Unique ID
+    let answeredState = {}; // Keeps track of answers
     let stats = { attempted: 0, correct: 0, wrong: 0 };
 
+    // --- INITIALIZE ---
     function init() {
         Papa.parse(SHEET_URL, {
             download: true,
@@ -89,29 +302,27 @@
             transformHeader: h => h.toLowerCase().trim(),
             complete: function(results) {
                 if (results.data.length > 0) {
-                    // Filter and Add Unique ID to each question
-                    allQuestions = results.data.filter(q => q.q_en).map((q, i) => ({
-                        ...q,
-                        uniqueId: `q-${i}-${Date.now()}` // Unique ID for tracking
-                    }));
+                    // Filter & Add Unique ID
+                    allQuestions = results.data
+                        .filter(q => q.q_en)
+                        .map((q, i) => ({ ...q, uniqueId: `q_${i}_${Date.now()}` }));
                     
-                    // Shuffle initial list
-                    allQuestions.sort(() => Math.random() - 0.5); 
+                    // Initial Shuffle
+                    allQuestions.sort(() => Math.random() - 0.5);
                     
                     document.getElementById('loader').style.display = 'none';
                     renderAll();
                 } else {
-                    document.getElementById('loader').innerText = "Sheet Empty!";
+                    document.getElementById('loader').innerHTML = "⚠️ Sheet Empty!";
                 }
             },
-            error: () => document.getElementById('loader').innerText = "Connection Error!"
+            error: () => document.getElementById('loader').innerHTML = "⚠️ Connection Failed!"
         });
     }
 
+    // --- RENDER ENGINE ---
     function renderAll() {
         const container = document.getElementById('quiz-container');
-        // Don't clear if we are just appending, but for language toggle we clear
-        // For performance, we re-render everything to keep order correct
         container.innerHTML = '';
 
         allQuestions.forEach((q, index) => {
@@ -122,69 +333,74 @@
     function createCard(q, index) {
         let card = document.createElement('div');
         card.className = 'card';
-        card.id = `card-node-${q.uniqueId}`; // ID based on data, not index
-
-        // Language Logic
-        const qText = (currentLang === 'hi' && q.q_hi) ? q.q_hi : q.q_en;
-        const expText = (currentLang === 'hi' && q.exp_hi) ? q.exp_hi : q.exp_en;
         
-        // Options
-        let optsData = [
-            (currentLang === 'hi' && q.opt_a_hi) ? q.opt_a_hi : q.opt_a,
-            (currentLang === 'hi' && q.opt_b_hi) ? q.opt_b_hi : q.opt_b,
-            (currentLang === 'hi' && q.opt_c_hi) ? q.opt_c_hi : q.opt_c,
-            (currentLang === 'hi' && q.opt_d_hi) ? q.opt_d_hi : q.opt_d
+        // Determine Language
+        const isHindi = currentLang === 'hi';
+        const qText = (isHindi && q.q_hi) ? q.q_hi : q.q_en;
+        const expText = (isHindi && q.exp_hi) ? q.exp_hi : q.exp_en;
+        const expLabel = isHindi ? 'व्याख्या' : 'Explanation';
+
+        // Options Fallback
+        const opts = [
+            (isHindi && q.opt_a_hi) ? q.opt_a_hi : q.opt_a,
+            (isHindi && q.opt_b_hi) ? q.opt_b_hi : q.opt_b,
+            (isHindi && q.opt_c_hi) ? q.opt_c_hi : q.opt_c,
+            (isHindi && q.opt_d_hi) ? q.opt_d_hi : q.opt_d
         ];
 
-        // Tags
-        let tagsHtml = `<span class="exam-tag">${q.exam || 'GK'}</span>`;
-        if(q.isRevision) {
-            tagsHtml += `<span class="revision-tag">REVISION #${q.revCount || 1}</span>`;
-        }
+        // Core Data
+        let correctIdx = 0;
+        const ansKey = q.correct ? q.correct.toLowerCase().trim() : 'a';
+        if(ansKey === 'b') correctIdx = 1;
+        if(ansKey === 'c') correctIdx = 2;
+        if(ansKey === 'd') correctIdx = 3;
+
+        // HTML Structure
+        let badges = `<span class="badge badge-exam">${q.exam || 'GK'}</span>`;
+        if(q.isRevision) badges += `<span class="badge badge-rev">REVISION #${q.revCount}</span>`;
 
         card.innerHTML = `
-            <div>${tagsHtml}</div>
-            <div class="q-text">Q. ${qText}</div>
-            <div class="opt-box"></div>
-            <div class="exp-box"><strong>${currentLang==='en'?'Explanation':'व्याख्या'}:</strong> ${expText || '-'}</div>
+            <div class="badge-container">${badges}</div>
+            <div class="q-text">Q${index+1}. ${qText}</div>
+            <div class="opt-grid"></div>
+            <div class="exp-box">
+                <strong>${expLabel}:</strong> ${expText || 'No details available.'}
+            </div>
         `;
 
-        const optBox = card.querySelector('.opt-box');
-        
-        // Calculate Correct Index (0-3)
-        let correctIdx = 0;
-        const ansChar = q.correct ? q.correct.toLowerCase().trim() : 'a';
-        if(ansChar === 'b') correctIdx = 1;
-        if(ansChar === 'c') correctIdx = 2;
-        if(ansChar === 'd') correctIdx = 3;
-
-        // Render Options
-        optsData.forEach((optText, i) => {
+        // Render Buttons
+        const optGrid = card.querySelector('.opt-grid');
+        opts.forEach((optText, i) => {
             if(!optText) return;
+            
             let btn = document.createElement('button');
             btn.className = 'opt-btn';
             btn.innerText = optText;
 
-            // Check Memory if already answered
+            // Check Memory State
             if(answeredState[q.uniqueId]) {
-                const memory = answeredState[q.uniqueId];
+                const mem = answeredState[q.uniqueId];
                 btn.disabled = true;
-                if(i === memory.correctIdx) btn.classList.add('correct');
-                if(i === memory.clickedIdx && i !== memory.correctIdx) btn.classList.add('wrong');
                 
-                // Card Border
-                card.style.borderLeftColor = memory.isCorrect ? "#27ae60" : "#e74c3c";
+                // Apply Colors from Memory
+                if(i === mem.correctIdx) btn.classList.add('correct');
+                if(i === mem.clickedIdx && !mem.isCorrect) btn.classList.add('wrong');
+                
+                // Show Explanation if answered
                 card.querySelector('.exp-box').style.display = 'block';
             } else {
-                btn.onclick = () => handleAnswer(card, btn, i, correctIdx, q, index);
+                // Active Listener
+                btn.onclick = () => handleAnswer(q, index, i, correctIdx, card, btn);
             }
-            optBox.appendChild(btn);
+            
+            optGrid.appendChild(btn);
         });
 
         return card;
     }
 
-    function handleAnswer(card, btn, clickedIdx, correctIdx, qData, currentIndex) {
+    // --- LOGIC HANDLER ---
+    function handleAnswer(qData, index, clickedIdx, correctIdx, card, btn) {
         if(answeredState[qData.uniqueId]) return;
 
         const isCorrect = (clickedIdx === correctIdx);
@@ -192,70 +408,39 @@
         // 1. Save State
         answeredState[qData.uniqueId] = { clickedIdx, correctIdx, isCorrect };
 
-        // 2. Update UI
+        // 2. Update UI (Disable all btns)
         const allBtns = card.querySelectorAll('.opt-btn');
-        allBtns.forEach(b => b.disabled = true);
-        card.querySelector('.exp-box').style.display = 'block';
-        
-        stats.attempted++;
+        allBtns.forEach((b, i) => {
+            b.disabled = true;
+            if(i === correctIdx) b.classList.add('correct'); // Always show correct
+        });
 
-        if(isCorrect) {
-            btn.classList.add('correct');
-            stats.correct++;
-            card.style.borderLeftColor = "#27ae60";
-        } else {
+        if(!isCorrect) {
             btn.classList.add('wrong');
-            allBtns[correctIdx].classList.add('correct');
             stats.wrong++;
-            card.style.borderLeftColor = "#e74c3c";
-
+            
             // --- SPACED REPETITION LOGIC ---
-            // अगर यह पहले से बहुत बार रिपीट नहीं हुआ है (Max 3 times)
-            let currentRev = qData.revCount || 0;
-            if(currentRev < 3) {
-                scheduleRevision(qData, currentIndex, currentRev + 1);
+            // Insert copy at: Current Index + 8 (Short term memory)
+            const revCount = (qData.revCount || 0) + 1;
+            if(revCount <= 3) { // Max 3 repeats
+                let retryQ = { ...qData, uniqueId: qData.uniqueId + `_r${revCount}`, isRevision: true, revCount: revCount };
+                
+                // Add to array
+                let targetPos = index + 8;
+                if(targetPos >= allQuestions.length) allQuestions.push(retryQ);
+                else allQuestions.splice(targetPos, 0, retryQ);
+                
+                // Re-render list to show new position (Keeping scroll)
+                setTimeout(() => refreshViewKeepScroll(), 500);
             }
-        }
-        updateStats();
-    }
 
-    function scheduleRevision(qData, currentIndex, nextRevCount) {
-        // 3 बार रिपीट होगा: 8 सवाल बाद, 16 बाद, 24 बाद
-        const gaps = [8, 16, 24]; 
-        
-        // Create a clean copy for revision
-        let revQ = { 
-            ...qData, 
-            uniqueId: qData.uniqueId + `_rev${nextRevCount}_${Date.now()}`, // New Unique ID
-            isRevision: true,
-            revCount: nextRevCount
-        };
-
-        // Insert into array (at specific gaps)
-        // हम एक-एक करके डालेंगे ताकि लिस्ट बहुत लंबी न दिखे एक बार में
-        // For simplicity in this logic: We add ONE copy at +10 position.
-        // If user gets THAT wrong, it will trigger another +10 insertion recursively.
-        // This is better than adding 3 at once which crowds the UI.
-        
-        // Let's insert it 10 spots down (or at end if list is short)
-        let targetIndex = currentIndex + 10;
-        if(targetIndex >= allQuestions.length) {
-            allQuestions.push(revQ);
         } else {
-            allQuestions.splice(targetIndex, 0, revQ);
+            stats.correct++;
         }
 
-        // NOTE: Since we modified the array, we must refresh the view
-        // But we want to keep the user's scroll position.
-        refreshUIKeepingScroll();
-    }
-
-    function refreshUIKeepingScroll() {
-        // Save current scroll
-        // Note: Re-rendering entire list is heavy but ensures consistency
-        const currentScroll = window.scrollY;
-        renderAll();
-        window.scrollTo(0, currentScroll);
+        stats.attempted++;
+        updateStats();
+        card.querySelector('.exp-box').style.display = 'block';
     }
 
     function updateStats() {
@@ -264,9 +449,15 @@
         document.getElementById('s-wrong').innerText = stats.wrong;
     }
 
+    function refreshViewKeepScroll() {
+        const scrollPos = window.scrollY;
+        renderAll();
+        window.scrollTo(0, scrollPos);
+    }
+
     function toggleLang() {
         currentLang = currentLang === 'en' ? 'hi' : 'en';
-        refreshUIKeepingScroll();
+        refreshViewKeepScroll();
     }
 
     init();
