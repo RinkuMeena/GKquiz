@@ -3,110 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExamHub Live Quiz</title>
+    <title>ExamHub Pro (Revision Mode)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 80px; }
         
-        /* --- NEW HEADER DESIGN --- */
+        /* HEADER */
         header { 
-            background: #fff; 
-            padding: 10px 15px; 
-            display: flex; 
-            flex-direction: column; /* Mobile friendly */
-            align-items: center; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
+            background: #fff; padding: 10px 15px; 
+            display: flex; flex-direction: column; align-items: center; 
+            position: sticky; top: 0; z-index: 1000; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.08); 
         }
 
-        .logo { font-weight: 900; color: #2c3e50; font-size: 1.1rem; margin-bottom: 5px; }
+        .logo { font-weight: 900; color: #2c3e50; font-size: 1.2rem; margin-bottom: 5px; }
         
-        /* Stats Container */
-        .stats-box {
-            display: flex;
-            gap: 10px;
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
+        .stats-box { display: flex; gap: 10px; font-size: 0.9rem; font-weight: bold; }
+        .stat-badge { padding: 5px 12px; border-radius: 20px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .bg-blue { background: #3498db; }
+        .bg-green { background: #27ae60; }
+        .bg-red { background: #e74c3c; }
 
-        .stat-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .bg-blue { background: #3498db; }  /* Attempted */
-        .bg-green { background: #27ae60; } /* Right */
-        .bg-red { background: #e74c3c; }   /* Wrong */
-
-        /* Quiz Card */
+        /* QUIZ CONTAINER */
         #quiz-container { max-width: 700px; margin: 20px auto; padding: 10px; }
-        .card { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid transparent; }
         
-        .q-text { font-size: 1.1rem; font-weight: 600; color: #333; margin: 15px 0; line-height: 1.5; }
+        .card { 
+            background: #fff; padding: 20px; margin-bottom: 20px; 
+            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            border-left: 6px solid transparent; position: relative;
+            transition: all 0.3s ease;
+        }
         
-        .opt-btn { width: 100%; padding: 12px; margin-bottom: 8px; border: 1px solid #e1e4e8; background: #fff; text-align: left; cursor: pointer; border-radius: 8px; font-size: 0.95rem; color: #444; transition: 0.2s; }
-        .opt-btn:hover { background: #f8f9fa; border-color: #d1d5db; }
+        /* TAGS */
+        .exam-tag { font-size: 0.75rem; font-weight: bold; color: #1565c0; background: #e3f2fd; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px; }
+        .revision-tag { font-size: 0.75rem; font-weight: bold; color: #fff; background: #e67e22; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-left: 8px; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        .q-text { font-size: 1.15rem; font-weight: 600; color: #333; margin-bottom: 15px; line-height: 1.5; }
+        
+        .opt-btn { width: 100%; padding: 14px; margin-bottom: 8px; border: 1px solid #e1e4e8; background: #fff; text-align: left; cursor: pointer; border-radius: 8px; font-size: 1rem; color: #444; transition: 0.2s; }
+        .opt-btn:hover:not([disabled]) { background: #f8f9fa; border-color: #d1d5db; }
         
         .correct { background: #d1e7dd !important; border-color: #0f5132 !important; color: #0f5132 !important; font-weight: bold; }
         .wrong { background: #f8d7da !important; border-color: #842029 !important; color: #842029 !important; }
         
-        .exp-box { display: none; margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 8px; color: #664d03; font-size: 0.9rem; border: 1px solid #ffecb5; }
+        .exp-box { display: none; margin-top: 15px; background: #fff3cd; padding: 15px; border-radius: 8px; color: #664d03; border: 1px solid #ffecb5; }
         
-        #loader { text-align: center; margin-top: 80px; font-size: 1.1rem; color: #666; }
-        
-        /* Floating Button */
-        .fab { position: fixed; bottom: 25px; right: 25px; background: #2c3e50; color: white; width: 55px; height: 55px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 1rem; z-index: 1000; }
+        #loader { text-align: center; margin-top: 80px; font-size: 1.2rem; color: #666; }
+        .fab { position: fixed; bottom: 25px; right: 25px; background: #2c3e50; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 1.1rem; z-index: 1000; }
 
-        /* Desktop View Adjustment */
         @media (min-width: 600px) {
             header { flex-direction: row; justify-content: space-between; padding: 15px 30px; }
-            .logo { margin-bottom: 0; font-size: 1.3rem; }
-            .stats-box { gap: 20px; font-size: 1rem; }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">ExamHub <span style="color:#27ae60; font-size:0.8rem">● Live</span></div>
-    
+    <div class="logo">ExamHub <span style="color:#27ae60;">● Pro</span></div>
     <div class="stats-box">
-        <div class="stat-badge bg-blue" title="Total Attempted">
-            Attempted: <span id="s-attempted">0</span>
-        </div>
-        <div class="stat-badge bg-green" title="Correct Answers">
-            Right: <span id="s-correct">0</span>
-        </div>
-        <div class="stat-badge bg-red" title="Wrong Answers">
-            Wrong: <span id="s-wrong">0</span>
-        </div>
+        <div class="stat-badge bg-blue">Attempted: <span id="s-attempted">0</span></div>
+        <div class="stat-badge bg-green">Right: <span id="s-correct">0</span></div>
+        <div class="stat-badge bg-red">Wrong: <span id="s-wrong">0</span></div>
     </div>
 </header>
 
-<div id="loader">Loading Questions from Sheet...</div>
+<div id="loader">Loading Data...</div>
 <div id="quiz-container"></div>
 <button class="fab" onclick="toggleLang()" title="Change Language">A/अ</button>
 
 <script>
-    // ✅ लिंक पहले से सेट है (Automatic Fixer के साथ)
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCPCEpMa6Nj55kQ87O2XRHE0pgL3C1dds7SVxqxk-5Iuh7wJIH00p0Q3LkrD8b9gX_GpM_sHlRenRY/pub?output=csv";
 
     let allQuestions = [];
     let currentLang = 'en';
-    
-    // Stats Variables
-    let stats = {
-        attempted: 0,
-        correct: 0,
-        wrong: 0
-    };
+    let answeredState = {}; // Stores result by Unique ID
+    let stats = { attempted: 0, correct: 0, wrong: 0 };
 
     function init() {
         Papa.parse(SHEET_URL, {
@@ -116,92 +89,173 @@
             transformHeader: h => h.toLowerCase().trim(),
             complete: function(results) {
                 if (results.data.length > 0) {
-                    // Filter empty rows
-                    allQuestions = results.data.filter(q => q.q_en); 
-                    // Shuffle
+                    // Filter and Add Unique ID to each question
+                    allQuestions = results.data.filter(q => q.q_en).map((q, i) => ({
+                        ...q,
+                        uniqueId: `q-${i}-${Date.now()}` // Unique ID for tracking
+                    }));
+                    
+                    // Shuffle initial list
                     allQuestions.sort(() => Math.random() - 0.5); 
                     
                     document.getElementById('loader').style.display = 'none';
-                    renderQuiz();
+                    renderAll();
                 } else {
-                    document.getElementById('loader').innerText = "Sheet Empty है!";
+                    document.getElementById('loader').innerText = "Sheet Empty!";
                 }
             },
             error: () => document.getElementById('loader').innerText = "Connection Error!"
         });
     }
 
-    function renderQuiz() {
+    function renderAll() {
         const container = document.getElementById('quiz-container');
+        // Don't clear if we are just appending, but for language toggle we clear
+        // For performance, we re-render everything to keep order correct
         container.innerHTML = '';
-        
-        // Load first 100 questions (Infinite scroll logic can be added)
-        allQuestions.slice(0, 100).forEach((q, idx) => {
-            let card = document.createElement('div');
-            card.className = 'card';
-            
-            // Language Toggle Logic
-            const qText = (currentLang === 'hi' && q.q_hi) ? q.q_hi : q.q_en;
-            const expText = (currentLang === 'hi' && q.exp_hi) ? q.exp_hi : q.exp_en;
-            
-            // Options Fallback Logic
-            let optA = (currentLang === 'hi' && q.opt_a_hi) ? q.opt_a_hi : q.opt_a;
-            let optB = (currentLang === 'hi' && q.opt_b_hi) ? q.opt_b_hi : q.opt_b;
-            let optC = (currentLang === 'hi' && q.opt_c_hi) ? q.opt_c_hi : q.opt_c;
-            let optD = (currentLang === 'hi' && q.opt_d_hi) ? q.opt_d_hi : q.opt_d;
 
-            // Correct Answer Logic
-            let correctIdx = 0;
-            const ans = q.correct ? q.correct.toLowerCase().trim() : 'a';
-            if(ans === 'b') correctIdx = 1;
-            if(ans === 'c') correctIdx = 2;
-            if(ans === 'd') correctIdx = 3;
-
-            card.innerHTML = `
-                <div style="font-size:0.8rem; color:#1565c0; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">${q.exam || 'GK'}</div>
-                <div class="q-text">Q${idx+1}. ${qText}</div>
-                <div class="opt-box"></div>
-                <div class="exp-box"><strong>${currentLang==='en'?'Explanation':'व्याख्या'}:</strong> ${expText || '-'}</div>
-            `;
-            
-            const optBox = card.querySelector('.opt-box');
-            [optA, optB, optC, optD].forEach((opt, i) => {
-                if(!opt) return;
-                let btn = document.createElement('button');
-                btn.className = 'opt-btn';
-                btn.innerText = opt;
-                btn.onclick = () => check(card, btn, i, correctIdx);
-                optBox.appendChild(btn);
-            });
-
-            container.appendChild(card);
+        allQuestions.forEach((q, index) => {
+            container.appendChild(createCard(q, index));
         });
     }
 
-    function check(card, btn, clicked, correct) {
-        if(card.classList.contains('done')) return; // Prevent multiple clicks
-        card.classList.add('done');
+    function createCard(q, index) {
+        let card = document.createElement('div');
+        card.className = 'card';
+        card.id = `card-node-${q.uniqueId}`; // ID based on data, not index
+
+        // Language Logic
+        const qText = (currentLang === 'hi' && q.q_hi) ? q.q_hi : q.q_en;
+        const expText = (currentLang === 'hi' && q.exp_hi) ? q.exp_hi : q.exp_en;
         
-        const btns = card.querySelectorAll('.opt-btn');
+        // Options
+        let optsData = [
+            (currentLang === 'hi' && q.opt_a_hi) ? q.opt_a_hi : q.opt_a,
+            (currentLang === 'hi' && q.opt_b_hi) ? q.opt_b_hi : q.opt_b,
+            (currentLang === 'hi' && q.opt_c_hi) ? q.opt_c_hi : q.opt_c,
+            (currentLang === 'hi' && q.opt_d_hi) ? q.opt_d_hi : q.opt_d
+        ];
+
+        // Tags
+        let tagsHtml = `<span class="exam-tag">${q.exam || 'GK'}</span>`;
+        if(q.isRevision) {
+            tagsHtml += `<span class="revision-tag">REVISION #${q.revCount || 1}</span>`;
+        }
+
+        card.innerHTML = `
+            <div>${tagsHtml}</div>
+            <div class="q-text">Q. ${qText}</div>
+            <div class="opt-box"></div>
+            <div class="exp-box"><strong>${currentLang==='en'?'Explanation':'व्याख्या'}:</strong> ${expText || '-'}</div>
+        `;
+
+        const optBox = card.querySelector('.opt-box');
         
-        // Update Attempted
+        // Calculate Correct Index (0-3)
+        let correctIdx = 0;
+        const ansChar = q.correct ? q.correct.toLowerCase().trim() : 'a';
+        if(ansChar === 'b') correctIdx = 1;
+        if(ansChar === 'c') correctIdx = 2;
+        if(ansChar === 'd') correctIdx = 3;
+
+        // Render Options
+        optsData.forEach((optText, i) => {
+            if(!optText) return;
+            let btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = optText;
+
+            // Check Memory if already answered
+            if(answeredState[q.uniqueId]) {
+                const memory = answeredState[q.uniqueId];
+                btn.disabled = true;
+                if(i === memory.correctIdx) btn.classList.add('correct');
+                if(i === memory.clickedIdx && i !== memory.correctIdx) btn.classList.add('wrong');
+                
+                // Card Border
+                card.style.borderLeftColor = memory.isCorrect ? "#27ae60" : "#e74c3c";
+                card.querySelector('.exp-box').style.display = 'block';
+            } else {
+                btn.onclick = () => handleAnswer(card, btn, i, correctIdx, q, index);
+            }
+            optBox.appendChild(btn);
+        });
+
+        return card;
+    }
+
+    function handleAnswer(card, btn, clickedIdx, correctIdx, qData, currentIndex) {
+        if(answeredState[qData.uniqueId]) return;
+
+        const isCorrect = (clickedIdx === correctIdx);
+        
+        // 1. Save State
+        answeredState[qData.uniqueId] = { clickedIdx, correctIdx, isCorrect };
+
+        // 2. Update UI
+        const allBtns = card.querySelectorAll('.opt-btn');
+        allBtns.forEach(b => b.disabled = true);
+        card.querySelector('.exp-box').style.display = 'block';
+        
         stats.attempted++;
 
-        if(clicked === correct) {
-            // Correct Answer
+        if(isCorrect) {
             btn.classList.add('correct');
             stats.correct++;
             card.style.borderLeftColor = "#27ae60";
         } else {
-            // Wrong Answer
             btn.classList.add('wrong');
-            if(btns[correct]) btns[correct].classList.add('correct'); // Show right answer
+            allBtns[correctIdx].classList.add('correct');
             stats.wrong++;
             card.style.borderLeftColor = "#e74c3c";
+
+            // --- SPACED REPETITION LOGIC ---
+            // अगर यह पहले से बहुत बार रिपीट नहीं हुआ है (Max 3 times)
+            let currentRev = qData.revCount || 0;
+            if(currentRev < 3) {
+                scheduleRevision(qData, currentIndex, currentRev + 1);
+            }
         }
-        
         updateStats();
-        card.querySelector('.exp-box').style.display = 'block';
+    }
+
+    function scheduleRevision(qData, currentIndex, nextRevCount) {
+        // 3 बार रिपीट होगा: 8 सवाल बाद, 16 बाद, 24 बाद
+        const gaps = [8, 16, 24]; 
+        
+        // Create a clean copy for revision
+        let revQ = { 
+            ...qData, 
+            uniqueId: qData.uniqueId + `_rev${nextRevCount}_${Date.now()}`, // New Unique ID
+            isRevision: true,
+            revCount: nextRevCount
+        };
+
+        // Insert into array (at specific gaps)
+        // हम एक-एक करके डालेंगे ताकि लिस्ट बहुत लंबी न दिखे एक बार में
+        // For simplicity in this logic: We add ONE copy at +10 position.
+        // If user gets THAT wrong, it will trigger another +10 insertion recursively.
+        // This is better than adding 3 at once which crowds the UI.
+        
+        // Let's insert it 10 spots down (or at end if list is short)
+        let targetIndex = currentIndex + 10;
+        if(targetIndex >= allQuestions.length) {
+            allQuestions.push(revQ);
+        } else {
+            allQuestions.splice(targetIndex, 0, revQ);
+        }
+
+        // NOTE: Since we modified the array, we must refresh the view
+        // But we want to keep the user's scroll position.
+        refreshUIKeepingScroll();
+    }
+
+    function refreshUIKeepingScroll() {
+        // Save current scroll
+        // Note: Re-rendering entire list is heavy but ensures consistency
+        const currentScroll = window.scrollY;
+        renderAll();
+        window.scrollTo(0, currentScroll);
     }
 
     function updateStats() {
@@ -212,12 +266,7 @@
 
     function toggleLang() {
         currentLang = currentLang === 'en' ? 'hi' : 'en';
-        // Resetting container to re-render with new language
-        // Note: Score is kept in variables, so it won't reset on lang toggle visually, 
-        // but questions will re-render. 
-        // For a perfect experience, we usually don't re-render answered cards, 
-        // but for this simple version, re-rendering is fine.
-        renderQuiz();
+        refreshUIKeepingScroll();
     }
 
     init();
